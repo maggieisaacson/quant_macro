@@ -22,75 +22,74 @@ m = 3 ;
 n = 3 ; 
 
 % Identical Weights 
-lambda = (1/n)*ones(n,1) ;
+lambda = (1/n)*ones(1,n) ;
 
 % Alpha > 0 
-alpha = 2*ones(m,n) ; 
+alpha = 0.5*ones(n,m) ; 
 
 % Omega < 0
-omega = -1.5*ones(m,n) ; 
+omega = -0.5*ones(n,m) ; 
 
 % Endowments 
-endow = ones(m,n) ; 
+individual_endow = ones(n,m) ; 
+total_endow = transpose(individual_endow)*ones(n,1) ; 
 
 % Start with a guess 
-x = transpose([2,0.5,0.5, 0.5, 2, 0.5, 0.5,0.5,2, 2, 3, 4]) ; 
+x = [0.5,0.5,0.5; 0.5, 0.5, 1.5] ;
 norm_g = 100 ; 
-maxit = 9 ; 
+maxit = 1000 ; 
 it = 0 ; 
 beta = 0 ; 
 alpha_step = 0.01;
 d = 0 ; 
-tolerance = 10^-6 ;  
+tolerance = 10^-5 ;  
+   
+%% Loop 
+% Minimize sum 
+while norm_g > tolerance && it < maxit 
 
+    % Gradient written on x as a matrix 
+    x_col = reshape(transpose(x),(n-1)*m,1) ; 
+    grad = gradient_function(x, total_endow,lambda,alpha,omega) ;
 
-x_tracker = zeros(n*(m+1),maxit +1) ; 
-norm_tracker = zeros(1,maxit) ; 
-gradient_tracker = zeros(n*(m+1),maxit+1) ; 
-%% 
+    norm_g = norm(grad) ; 
 
-% Minimize negative utility subject to endowments 
-while norm_g > tolerance && it <= maxit 
-    grad = gradient(x, endow, lambda, alpha,omega) ; 
-    gradient_tracker(:,it+1) = grad ; 
+    g = gradient_function(x,total_endow,lambda,alpha,omega) ; 
+    g_col = reshape(transpose(g),(n-1)*m,1) ; 
 
-    norm_g = norm(grad) ;
-    norm_tracker(1,it+1) = norm_g ; 
+    dplus = -g_col + beta*d ; 
 
-    g = gradient(x, endow, lambda, alpha,omega) ; 
-    dplus = -g + beta*d;
-    
-    x_tracker(:,it+1) = x ; 
+    x_col = x_col + alpha_step.*dplus ; 
+    x = reshape(x_col,n-1,m) ; 
 
-    x = x + alpha_step.*dplus ; 
-    it = it + 1 ;
-    gplus = gradient(x, endow, lambda, alpha,omega) ; 
-
+    it = it + 1 ; 
+    gplus = gradient_function(x,total_endow,lambda,alpha,omega); 
+    g_col_plus = reshape(transpose(gplus),(n-1)*m,1) ; 
     d = dplus ; 
- 
-    beta = (transpose(gplus)*gplus)/(transpose(g)*g) ; 
-end  
+    
+    beta = (transpose(g_col_plus)*g_col_plus)/(transpose(g_col)*g_col) ; 
+end 
 
 %% 2. Compute Pareto Efficient Allocations (changing parameters) 
 
 
 
 %% Function appendix 
-% function z = utility(x, alpha, omega)
-%     values = transpose(alpha)*(x.^(1 + omega))./(1+omega) ; 
-%     z =  -transpose(ones(size(x)))*values ; 
-% end 
+function z = gradient_function(x, endow,lambda,alpha,omega)
+    % Size of x is actually n-1 from above 
+    [n,~] = size(x) ; 
+    
+    % Create variables for last person versus all 
+    x_last = transpose(endow) - ones(1,n)*x ; 
+    alpha_1_nminus = alpha(1:n,:) ; 
+    alpha_n = alpha(n+1,:) ; 
+    omega_1_nminus = omega(1:n,:) ; 
+    omega_n = omega(n+1,:) ; 
+    lambda_1_nminus = lambda(1:n) ; 
+    lambda_n = lambda(n+1) ; 
 
-function z = gradient(x, endow, lambda, alpha, omega)
-    x = transpose(reshape(x,3,4)) ;
-    [size_x,~] = size(x) ; 
-    consumption = x(1:size_x-1,:);
-    lagrange = x(size_x,:) ;
-    x_values = -transpose(alpha)*(consumption.^omega) ; 
-    grad1 = transpose(lambda)*ones(size_x-1,size_x-1).*x_values ;  
+    impact = lambda_n*alpha_n.*x_last.^omega_n ; 
+    impact = [impact; impact] ;
 
-    grad2 = ones(1,size_x-1)*(consumption - endow) ; 
-    z = [grad1; grad2] ; 
-    z = z(:) ;
-    %z = consumption*ones(size_x,1) ;
-end 
+    z = impact - transpose(lambda_1_nminus).*alpha_1_nminus.*x.^omega_1_nminus ;
+end
