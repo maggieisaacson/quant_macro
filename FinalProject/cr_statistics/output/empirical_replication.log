@@ -1,0 +1,1389 @@
+------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  C:\Users\misaa\Documents\Year2\quant_macro\quant_macro\FinalProject\cr_statistics\code\..\output\empi
+> rical_replication.log
+  log type:  text
+ opened on:  11 Jan 2025, 15:39:13
+
+. set scheme plotplainblind
+
+. 
+. * Import CPS Data 
+. u ..\..\cr_cps_data\output\raw_cps_data if eligorg == 1, clear 
+
+. 
+. * Keep ORG from 9/1995 to 8/2007 
+. gen date = mdy(month,1,year) 
+
+. 
+. gen monthly_date = mofd(date)
+
+. 
+. keep if inrange(monthly_date,mofd(mdy(9,1,1995)),mofd(mdy(8,1,2007)))
+(188,431 observations deleted)
+
+. 
+. * Sample Selection: Men 25-64 who worked only one job with usual weekly hours over 10, not enrolled in school, a
+> nd not self employed 
+. * Keep men 
+. keep if sex == 1 
+(1,115,358 observations deleted)
+
+. 
+. * Keep in age range
+. keep if inrange(age,25,64) 
+(205,117 observations deleted)
+
+. 
+. * Keep if one job 
+. keep if multjob == 1 
+(140,418 observations deleted)
+
+. 
+. * Keep those who aren't self-employed 
+. keep if ~inrange(classwkr,13,14)
+(0 observations deleted)
+
+. 
+. * Not enrolled 
+. * keep if schlcoll == 5 
+. 
+. * Over 10 Usual weekly hours 
+. keep if uhrswork1 >= 10 
+(2,108 observations deleted)
+
+. 
+. * Paper replication 
+. * Variables of interest: usual weekly hours at main job (uhrswork1) and usual weekly earnings at main job (earnw
+> eek)
+. 
+. * Figure I 
+. * Create hours bins 
+. replace uhrswork1 =. if uhrswork1 >= 997
+(53,443 real changes made, 53,443 to missing)
+
+. gen person = 1 
+
+. 
+. gen hours_bin =. 
+(799,169 missing values generated)
+
+. replace hours_bin = 1 if inrange(uhrswork1,.,35)
+(41,501 real changes made)
+
+. replace hours_bin = 2 if inrange(uhrswork1,35,39)
+(24,537 real changes made)
+
+. replace hours_bin = 3 if inrange(uhrswork1,40,44)
+(480,974 real changes made)
+
+. replace hours_bin = 4 if inrange(uhrswork1,45,49)
+(60,002 real changes made)
+
+. replace hours_bin = 5 if inrange(uhrswork1,50,.)
+(150,770 real changes made)
+
+. replace hours_bin =. if missing(uhrswork1)
+(0 real changes made)
+
+. 
+. label define hours_bin_lbl 1 "<35" 2 "35-29" 3 "40-44" 4 "45-49" 5 "50+"
+
+. label values hours_bin hours_bin_lbl
+
+. 
+. * Histogram weights need to be integers, final weight without decimals 
+. gen hist_weight = wtfinl*10000
+
+. 
+. graph bar (percent) person, over(hours_bin) b1title("Hours Bin") ytitle("Share in %") blabel(bar)  saving(hours_
+> bin, replace)
+(file hours_bin.gph saved)
+
+. 
+. gen long_hours_bin=. 
+(799,169 missing values generated)
+
+. replace long_hours_bin = 0 if inrange(uhrswork1,10,49)
+(594,956 real changes made)
+
+. replace long_hours_bin = 1 if inrange(uhrswork1,50,54)
+(78,626 real changes made)
+
+. replace long_hours_bin = 2 if inrange(uhrswork1,55,59)
+(20,335 real changes made)
+
+. replace long_hours_bin = 3 if inrange(uhrswork1,60,64)
+(34,203 real changes made)
+
+. replace long_hours_bin = 4 if inrange(uhrswork1,65,69)
+(4,275 real changes made)
+
+. replace long_hours_bin = 5 if inrange(uhrswork1,70,74)
+(7,076 real changes made)
+
+. replace long_hours_bin = 6 if inrange(uhrswork1,75,79)
+(984 real changes made)
+
+. replace long_hours_bin = 7 if inrange(uhrswork1,80,.)
+(5,271 real changes made)
+
+. replace long_hours_bin =. if missing(uhrswork1)
+(0 real changes made)
+
+. label define long_hours_bin_lbl 1 "50-54" 2 "55-59" 3 "60-64" 4 "65-69" 5 "70-74" 6 "75-79" 7 "80+"
+
+. label values long_hours_bin long_hours_bin_lbl
+
+. 
+. graph bar (percent) person if long_hours_bin != 0,  over(long_hours_bin) b1title("Long Hours Bin") ytitle("Share
+>  in %") blabel(bar) saving(long_hours_bin, replace)
+(file long_hours_bin.gph saved)
+
+. 
+. graph combine hours_bin.gph long_hours_bin.gph
+
+. graph export ..\output\figure1.png, replace 
+(file ..\output\figure1.png written in PNG format)
+
+. 
+. * Figure II
+. gen age_bin=. 
+(799,169 missing values generated)
+
+. replace age_bin = 1 if inrange(age,25,34) 
+(228,435 real changes made)
+
+. replace age_bin = 2 if inrange(age,35,44)
+(251,279 real changes made)
+
+. replace age_bin = 3 if inrange(age,45,54)
+(213,688 real changes made)
+
+. replace age_bin = 4 if inrange(age,55,64)
+(105,767 real changes made)
+
+. label define age_bin_lbl 1 "25-34" 2 "35-44" 3 "45-54" 4 "55-64"
+
+. label values age_bin age_bin_lbl
+
+. 
+. graph bar (percent) person,  over(age_bin) asyvars over(hours_bin) b1title("Hours Bin") ytitle("Share in %") leg
+> end(position(6) cols(4)) saving(age_bins, replace)
+(file age_bins.gph saved)
+
+. 
+. gen educ_bin=. 
+(799,169 missing values generated)
+
+. replace educ_bin = 1 if inrange(educ,.,71)
+(85,647 real changes made)
+
+. replace educ_bin = 2 if inrange(educ,72,92) 
+(465,528 real changes made)
+
+. replace educ_bin = 3 if inrange(educ,111,111)
+(162,941 real changes made)
+
+. replace educ_bin = 4 if inrange(educ,123,.)
+(85,053 real changes made)
+
+. label define educ_bin_lbl 1 "LHS" 2 "HS" 3 "Bach" 4 "Bach+" 
+
+. label values educ_bin educ_bin_lbl 
+
+. 
+. graph bar (percent) person,  over(educ_bin) asyvars over(hours_bin) b1title("Hours Bin") ytitle("Share in %") le
+> gend(position(6) cols(4)) saving(educ_bins, replace)
+(file educ_bins.gph saved)
+
+. 
+. graph combine age_bins.gph educ_bins.gph 
+
+. graph export ..\output\figure2.png, replace 
+(file ..\output\figure2.png written in PNG format)
+
+. 
+. * Figure III 
+. gen wage_hour_bins=. 
+(799,169 missing values generated)
+
+. forvalues i = 1(1)14 {
+  2.         local hr_start = 5*(`i'+1) 
+  3.         local hr_end = 5*(`i'+2) - 1
+  4.         
+.         replace wage_hour_bins = `i' if inrange(uhrswork1,`hr_start',`hr_end') 
+  5. }
+(1,888 real changes made)
+(3,013 real changes made)
+(9,415 real changes made)
+(4,229 real changes made)
+(10,898 real changes made)
+(24,537 real changes made)
+(480,974 real changes made)
+(60,002 real changes made)
+(78,626 real changes made)
+(20,335 real changes made)
+(34,203 real changes made)
+(4,275 real changes made)
+(7,076 real changes made)
+(984 real changes made)
+
+. label define wage_hour_bins_lbl 1 "10-14" 2 "15-19" 3 "20-24" 4 "25-29" 5 "30-34" 6 "35-39" 7 "40-44" 8 "45-49" 
+> 9 "50-54" 10 "55-59" 11 "60-64" 12 "65-69" 13 "70-74" 14 "75-79" 15 "80+"
+
+. label values wage_hour_bins wage_hour_bins_lbl
+
+. 
+. replace wage_hour_bins = 15 if inrange(uhrswork1,80,99)
+(5,271 real changes made)
+
+. 
+. gen lhr_wage = log(earnweek/uhrswork1)
+(53,443 missing values generated)
+
+. gen learnings = log(earnweek) 
+
+. gen lhrs = log(uhrswork1)
+(53,443 missing values generated)
+
+. 
+. gen age2 = age^2
+
+. gen married = (marst == 1 | marst == 2)
+
+. 
+. gen race_cat=. 
+(799,169 missing values generated)
+
+. replace race_cat = 1 if race == 200 
+(65,314 real changes made)
+
+. replace race_cat = 2 if hispan > 1 & missing(race_cat) 
+(89,392 real changes made)
+
+. replace race_cat = 3 if missing(race_cat)
+(644,463 real changes made)
+
+. 
+. label define race_cat_lbl 1 "Black" 2 "Hispanic" 3 "Non-Black Non-Hispanic"
+
+. label values race_cat race_cat_lbl
+
+. 
+. gen public = (classwkr == 22 | classwkr == 23) 
+
+. label define public_lbl 1 "Private" 2 "Public"
+
+. label values public public_lbl
+
+. 
+. gen metro_area = (metro == 2 | metro == 3 | metro == 4)
+
+. 
+. save ..\temp\pre_regression.dta, replace 
+file ..\temp\pre_regression.dta saved
+
+. 
+. * Log of Hourly Wages
+. u ..\temp\pre_regression, clear 
+
+. 
+. statsby _b _se: reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat i.public
+>  i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  <none>
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+.
+
+. 
+. preserve 
+
+. keep _stat_111 _stat_112 _stat_113 _stat_114 _stat_115 _stat_116 _stat_117 _stat_118 _stat_119 _stat_120 _stat_1
+> 21 _stat_122 _stat_123 _stat_124 _stat_125
+
+. 
+. xpose, clear 
+
+. 
+. rename v1 se1 
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. tempfile se1 
+
+. save `se1'
+file C:\Users\misaa\AppData\Local\Temp\ST_5c30_000002.tmp saved
+
+. 
+. restore 
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15  
+
+. 
+. xpose, clear 
+
+. 
+. gen hours = (_n + 1)*5 
+
+. 
+. merge 1:1 hours using `se1' 
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                                15  (_merge==3)
+    -----------------------------------------
+
+. 
+. gen low = v1 - se1*1.96 
+
+. gen high = v1 + se1*1.96 
+
+. 
+. graph twoway (connected v1 hours) (rarea low high hours, fcolor(%30)), legend(order(2) lab(2 "95% CI") position(
+> 6)) xtitle("Hours bin (usual weekly hours)") ytitle("log of Hourly Wages") 
+
+. graph export ..\output\figure3_a.png, replace 
+(file ..\output\figure3_a.png written in PNG format)
+
+. 
+. * Log Earnings 
+. u ..\temp\pre_regression, clear 
+
+. 
+. statsby _b _se: reg learnings ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat i.publi
+> c i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress learnings ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  <none>
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+.
+
+. 
+. preserve 
+
+. keep _stat_111 _stat_112 _stat_113 _stat_114 _stat_115 _stat_116 _stat_117 _stat_118 _stat_119 _stat_120 _stat_1
+> 21 _stat_122 _stat_123 _stat_124 _stat_125
+
+. 
+. xpose, clear 
+
+. 
+. rename v1 se2 
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. tempfile se2 
+
+. save `se2'
+file C:\Users\misaa\AppData\Local\Temp\ST_5c30_000004.tmp saved
+
+. 
+. restore 
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15  
+
+. 
+. xpose, clear 
+
+. 
+. gen hours = (_n + 1)*5 
+
+. 
+. merge 1:1 hours using `se2' 
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                                15  (_merge==3)
+    -----------------------------------------
+
+. 
+. gen low = v1 - se2*1.96 
+
+. gen high = v1 + se2*1.96 
+
+. 
+. graph twoway (connected v1 hours) (rarea low high hours, fcolor(%30)), legend(order(2) lab(2 "95% CI") position(
+> 6)) xtitle("Hours bin (usual weekly hours)") ytitle("log of Weekly Earnings") 
+
+. graph export ..\output\figure3_b.png, replace 
+(file ..\output\figure3_b.png written in PNG format)
+
+. 
+. * Figure IV 
+. * I'm not cleaning that many datasets, so looking at panels (A)-(D)
+. 
+. u ..\temp\pre_regression, clear 
+
+. 
+. * Generate Occupation Categories 
+. gen occ_cat=. 
+(799,169 missing values generated)
+
+. replace occ_cat = 1 if inrange(occ2010,0,430)
+(96,741 real changes made)
+
+. replace occ_cat = 2 if inrange(occ2010,500,730)
+(12,469 real changes made)
+
+. replace occ_cat = 3 if inrange(occ2010,800,950)
+(14,298 real changes made)
+
+. replace occ_cat = 4 if inrange(occ2010,1000,1240)
+(24,821 real changes made)
+
+. replace occ_cat = 5 if inrange(occ2010,1300,1540)
+(28,712 real changes made)
+
+. replace occ_cat = 6 if inrange(occ2010,1550,1560)
+(4,059 real changes made)
+
+. replace occ_cat = 7 if inrange(occ2010,1600,1980)
+(13,448 real changes made)
+
+. replace occ_cat = 8 if inrange(occ2010,2000,2060)
+(9,797 real changes made)
+
+. replace occ_cat = 9 if inrange(occ2010,2100,2150)
+(7,463 real changes made)
+
+. replace occ_cat = 10 if inrange(occ2010,2200,2550)
+(25,504 real changes made)
+
+. replace occ_cat = 11 if inrange(occ2010,2600,2920)
+(11,206 real changes made)
+
+. replace occ_cat = 12 if inrange(occ2010,3000,3650)
+(19,776 real changes made)
+
+. replace occ_cat = 13 if inrange(occ2010,3700,3950)
+(25,137 real changes made)
+
+. replace occ_cat = 14 if inrange(occ2010,4000,4150)
+(21,112 real changes made)
+
+. replace occ_cat = 15 if inrange(occ2010,4200,4250)
+(28,964 real changes made)
+
+. replace occ_cat = 16 if inrange(occ2010,4300,4650)
+(5,413 real changes made)
+
+. replace occ_cat = 17 if inrange(occ2010,4700,4965)
+(77,705 real changes made)
+
+. replace occ_cat = 18 if inrange(occ2010,5000,5940)
+(46,786 real changes made)
+
+. replace occ_cat = 19 if inrange(occ2010,6000,6130)
+(8,160 real changes made)
+
+. replace occ_cat = 20 if inrange(occ2010,6200,6765)
+(78,811 real changes made)
+
+. replace occ_cat = 21 if inrange(occ2010,6800,6940)
+(2,869 real changes made)
+
+. replace occ_cat = 22 if inrange(occ2010,7000,7630)
+(59,847 real changes made)
+
+. replace occ_cat = 23 if inrange(occ2010,7700,8965)
+(89,930 real changes made)
+
+. replace occ_cat = 24 if inrange(occ2010,9000,9750)
+(86,141 real changes made)
+
+. 
+. * Generate Industry Categories 
+. gen ind_cat=. 
+(799,169 missing values generated)
+
+. replace ind_cat = 1 if inrange(ind1990,10,32)
+(15,954 real changes made)
+
+. replace ind_cat = 2 if inrange(ind1990,40,50)
+(9,559 real changes made)
+
+. replace ind_cat = 3 if inrange(ind1990,60,60)
+(86,451 real changes made)
+
+. replace ind_cat = 4 if inrange(ind1990,100,392)
+(169,599 real changes made)
+
+. replace ind_cat = 5 if inrange(ind1990,400,472)
+(88,815 real changes made)
+
+. replace ind_cat = 6 if inrange(ind1990,500,571)
+(40,723 real changes made)
+
+. replace ind_cat = 7 if inrange(ind1990,580,691)
+(99,290 real changes made)
+
+. replace ind_cat = 8 if inrange(ind1990,700,712)
+(41,805 real changes made)
+
+. replace ind_cat = 9 if inrange(ind1990,721,760)
+(54,691 real changes made)
+
+. replace ind_cat = 10 if inrange(ind1990,761,791)
+(13,382 real changes made)
+
+. replace ind_cat = 11 if inrange(ind1990,800,810)
+(11,531 real changes made)
+
+. replace ind_cat = 12 if inrange(ind1990,812,893)
+(118,355 real changes made)
+
+. replace ind_cat = 13 if inrange(ind1990,900,932)
+(49,014 real changes made)
+
+. 
+. save ..\temp\pre_regression.dta, replace 
+file ..\temp\pre_regression.dta saved
+
+. 
+. * Age 
+. u ..\temp\pre_regression, clear 
+
+. 
+. statsby _b, by(age_bin): reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+>  i.public i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  age_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15 age_bin
+
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. gen hours = (_n + 1)*5
+
+. 
+. graph twoway (connected v1 hours) (connected v2 hours)  (connected v3 hours)  (connected v4 hours), yline(0) xli
+> ne(40) legend(lab(1 "25-34") lab(2 "35-44") lab(3 "45-54") lab(4 "55-64") position(6) cols(4)) ytitle("Log of Ho
+> urly Wage") xtitle("Hours bin (usual weekly hours)")
+
+. graph export ..\output\figure4_a.png, replace 
+(file ..\output\figure4_a.png written in PNG format)
+
+. 
+. * Education 
+. u ..\temp\pre_regression, clear 
+
+. 
+. statsby _b, by(educ_bin): reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_ca
+> t i.public i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+xxxx
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15 educ_bin
+
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. gen hours = (_n + 1)*5
+
+. 
+. graph twoway (connected v1 hours) (connected v2 hours)  (connected v3 hours)  (connected v4 hours), yline(0) xli
+> ne(40) legend(lab(1 "LHS") lab(2 "HS") lab(3 "Bach") lab(4 "Bach+") position(6) cols(4)) ytitle("Log of Hourly W
+> age") xtitle("Hours bin (usual weekly hours)")
+
+. graph export ..\output\figure4_b.png, replace 
+(file ..\output\figure4_b.png written in PNG format)
+
+. 
+. * Occupation 
+. u ..\temp\pre_regression, clear  
+
+. 
+. statsby _b, by(occ_cat): reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+>  i.public i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  occ_cat
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....................x...
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15 occ_cat
+
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. graph twoway (connected v1 hours) (connected v2 hours)  (connected v3 hours)  (connected v4 hours) (connected v5
+>  hours)(connected v6 hours)(connected v7 hours)(connected v8 hours)(connected v9 hours)(connected v10 hours)(con
+> nected v11 hours)(connected v12 hours)(connected v13 hours)(connected v14 hours)(connected v15 hours)(connected 
+> v16 hours)(connected v17 hours)(connected v18 hours)(connected v19 hours)(connected v20 hours)(connected v21 hou
+> rs)(connected v22 hours)(connected v23 hours)(connected v24 hours) , yline(0) xline(40) legend(off) ytitle("Log 
+> of Hourly Wage") xtitle("Hours bin (usual weekly hours)")
+
+. graph export ..\output\figure4_c.png, replace 
+(file ..\output\figure4_c.png written in PNG format)
+
+. 
+. * Industry 
+. u ..\temp\pre_regression, clear  
+
+. 
+. statsby _b, by(ind_cat): reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+>  i.public i.metro_area i.statefip i.union, robust
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  ind_cat
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+............x
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15 ind_cat
+
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. graph twoway (connected v1 hours) (connected v2 hours)  (connected v3 hours)  (connected v4 hours) (connected v5
+>  hours)(connected v6 hours)(connected v7 hours)(connected v8 hours)(connected v9 hours)(connected v10 hours)(con
+> nected v11 hours)(connected v12 hours)(connected v13 hours) , yline(0) xline(40) legend(off) ytitle("Log of Hour
+> ly Wage") xtitle("Hours bin (usual weekly hours)")
+
+. graph export ..\output\figure4_d.png, replace 
+(file ..\output\figure4_d.png written in PNG format)
+
+. 
+. * Figure V 
+. u ..\temp\pre_regression, clear 
+
+. 
+. statsby _b _se, by(paidhour): reg lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.rac
+> e_cat i.public i.metro_area i.statefip i.union, robust 
+(running regress on estimation sample)
+
+      command:  regress lhr_wage ib7.wage_hour_bins age age2 i.educ_bin i.year i.married i.month i.race_cat
+                    i.public i.metro_area i.statefip i.union, robust
+           by:  paidhour
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+..
+
+. preserve 
+
+. 
+. keep paidhour _stat_111 _stat_112 _stat_113 _stat_114 _stat_115 _stat_116 _stat_117 _stat_118 _stat_119 _stat_12
+> 1 _stat_120 _stat_122 _stat_123 _stat_124 _stat_125 
+
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. rename v1 se_1 
+
+. rename v2 se_2
+
+. 
+. tempfile se_file
+
+. save `se_file'
+file C:\Users\misaa\AppData\Local\Temp\ST_5c30_000006.tmp saved
+
+. 
+. restore 
+
+. 
+. keep _stat_1 _stat_2 _stat_3 _stat_4 _stat_5 _stat_6 _stat_7 _stat_8 _stat_9 _stat_10 _stat_11 _stat_12 _stat_13
+>  _stat_14 _stat_15 paidhour 
+
+. 
+. 
+. xpose, clear 
+
+. 
+. drop if _n == 1 
+(1 observation deleted)
+
+. 
+. gen hours = (_n + 1)*5
+
+. 
+. merge 1:1 hours using `se_file'
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                                15  (_merge==3)
+    -----------------------------------------
+
+. 
+. gen low1 = v1 - se_1*1.96 
+
+. gen high1 = v1 + se_1*1.96 
+
+. gen low2 = v2 - se_2*1.96 
+
+. gen high2 = v2 + se_2*1.96 
+
+. 
+. graph twoway (connected v1 hours) (connected v2 hours) (rarea low1 high1 hours, fcolor(%30)) (rarea low2 high2 h
+> ours, fcolor(%30)), yline(0) xline(40) legend( order(1 2) lab(1 "Salary") lab(2 "Hourly")) ytitle("Log of Hourly
+>  Wage") xtitle("Hours bin (usual weekly hours)")
+
+. graph export ..\output\figure5.png, replace 
+(file ..\output\figure5.png written in PNG format)
+
+. 
+. *******************
+. * Table I 
+. *******************
+. u ..\..\cr_cps_data\output\raw_cps_data if asecflag == 1, clear 
+
+. 
+. * Sample Selection: Men 25-64 who worked only one job with usual weekly hours over 10, not enrolled in school, a
+> nd not self employed 
+. * Keep men 
+. keep if sex == 1 
+(1,186,783 observations deleted)
+
+. 
+. * Keep in age range
+. keep if inrange(age,25,64) 
+(548,252 observations deleted)
+
+. 
+. * Keep if one job 
+. * keep if multjob == 1 
+. 
+. * Keep those who aren't self-employed 
+. * keep if ~inrange(classwkr,13,14)
+. 
+. * Not enrolled 
+. * keep if schlcoll == 5 
+. 
+. * Over 10 Usual weekly hours 
+. keep if uhrswork1 >= 10 
+(109,541 observations deleted)
+
+. 
+. gen age_bin=. 
+(456,049 missing values generated)
+
+. replace age_bin = 1 if inrange(age,25,34) 
+(121,239 real changes made)
+
+. replace age_bin = 2 if inrange(age,35,44)
+(148,720 real changes made)
+
+. replace age_bin = 3 if inrange(age,45,54)
+(123,839 real changes made)
+
+. replace age_bin = 4 if inrange(age,55,64)
+(62,251 real changes made)
+
+. label define age_bin_lbl 1 "25-34" 2 "35-44" 3 "45-54" 4 "55-64"
+
+. label values age_bin age_bin_lbl
+
+. 
+. gen educ_bin=. 
+(456,049 missing values generated)
+
+. replace educ_bin = 1 if inrange(educ,.,71)
+(54,100 real changes made)
+
+. replace educ_bin = 2 if inrange(educ,72,92) 
+(260,376 real changes made)
+
+. replace educ_bin = 3 if inrange(educ,111,111)
+(91,273 real changes made)
+
+. replace educ_bin = 4 if inrange(educ,123,.)
+(50,300 real changes made)
+
+. label define educ_bin_lbl 1 "LHS" 2 "HS" 3 "Bach" 4 "Bach+" 
+
+. label values educ_bin educ_bin_lbl 
+
+. 
+. gen race_cat=. 
+(456,049 missing values generated)
+
+. replace race_cat = 1 if race == 200 
+(38,082 real changes made)
+
+. replace race_cat = 2 if hispan > 1 & missing(race_cat) 
+(66,379 real changes made)
+
+. replace race_cat = 3 if missing(race_cat)
+(351,588 real changes made)
+
+. 
+. label define race_cat_lbl 1 "Black" 2 "Hispanic" 3 "Non-Black Non-Hispanic"
+
+. label values race_cat race_cat_lbl
+
+. 
+. gen married = (marst == 1 | marst == 2)
+
+. 
+. gen nonlabor_income = ftotval - incwage 
+
+. 
+. xtile nonlabor_quint = nonlabor_income, nq(5)
+
+. 
+. reg uhrswork1 i.age_bin i.race_cat i.married nchild nchlt5 i.nonlabor_quint
+
+      Source |       SS           df       MS      Number of obs   =   456,049
+-------------+----------------------------------   F(12, 456036)   =   1022.91
+       Model |   696853232        12  58071102.7   Prob > F        =    0.0000
+    Residual |  2.5889e+10   456,036  56770.6922   R-squared       =    0.0262
+-------------+----------------------------------   Adj R-squared   =    0.0262
+       Total |  2.6586e+10   456,048  58297.2245   Root MSE        =    238.27
+
+-----------------------------------------------------------------------------------------
+              uhrswork1 |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+------------------------+----------------------------------------------------------------
+                age_bin |
+                 35-44  |    7.95069   .9723688     8.18   0.000     6.044877    9.856503
+                 45-54  |   16.91968   1.053999    16.05   0.000     14.85387    18.98549
+                 55-64  |   93.49036   1.263281    74.01   0.000     91.01437    95.96636
+                        |
+               race_cat |
+              Hispanic  |  -21.89526   1.544373   -14.18   0.000    -24.92218   -18.86833
+Non-Black Non-Hispanic  |  -30.68035   1.295316   -23.69   0.000    -33.21913   -28.14157
+                        |
+              1.married |  -46.26219   .9813612   -47.14   0.000    -48.18562   -44.33875
+                 nchild |  -4.527926   .3543396   -12.78   0.000     -5.22242   -3.833431
+                 nchlt5 |   4.264531   .7650888     5.57   0.000      2.76498    5.764081
+                        |
+         nonlabor_quint |
+                     2  |    45.1931   1.148133    39.36   0.000     42.94279     47.4434
+                     3  |   50.68174   1.196105    42.37   0.000     48.33741    53.02607
+                     4  |   41.30379   1.214247    34.02   0.000     38.92391    43.68368
+                     5  |   36.11293   1.214695    29.73   0.000     33.73217     38.4937
+                        |
+                  _cons |   118.7941   1.496287    79.39   0.000     115.8615    121.7268
+-----------------------------------------------------------------------------------------
+
+. 
+. save ..\temp\pre_r2, replace 
+file ..\temp\pre_r2.dta saved
+
+. 
+. * Row 1 (All regressors)
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.age_bin i.race_cat i.married nchild nchlt5 i.nonlabor_quint, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.age_bin i.race_cat i.married nchild nchlt5 i.nonlabor_quint, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row1_panela.dta, replace 
+file ..\output\table1_row1_panela.dta saved
+
+. 
+. * Row 2 (no age)
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.race_cat i.married nchild nchlt5 i.nonlabor_quint, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.race_cat i.married nchild nchlt5 i.nonlabor_quint, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row2_panela.dta, replace 
+file ..\output\table1_row2_panela.dta saved
+
+. 
+. * Row 3 (no race)
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.age_bin i.married nchild nchlt5 i.nonlabor_quint, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.age_bin i.married nchild nchlt5 i.nonlabor_quint, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row3_panela.dta, replace 
+file ..\output\table1_row3_panela.dta saved
+
+. 
+. * Row 4 (no marital status) 
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.age_bin i.race_cat nchild nchlt5 i.nonlabor_quint, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.age_bin i.race_cat nchild nchlt5 i.nonlabor_quint, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row4_panela.dta, replace 
+file ..\output\table1_row4_panela.dta saved
+
+. 
+. * Row 5 (no child variables)
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.age_bin i.race_cat i.married i.nonlabor_quint, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.age_bin i.race_cat i.married i.nonlabor_quint, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row5_panela.dta, replace 
+file ..\output\table1_row5_panela.dta saved
+
+. 
+. * Row 6 (no income quintile)
+. u ..\temp\pre_r2, clear 
+
+. 
+. statsby e(r2), by(educ_bin): reg uhrswork1 i.age_bin i.race_cat i.married nchild nchlt5, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1 i.age_bin i.race_cat i.married nchild nchlt5, robust
+      _stat_1:  e(r2)
+           by:  educ_bin
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row6_panela.dta, replace 
+file ..\output\table1_row6_panela.dta saved
+
+. 
+. * Match and regress 
+. * I. Sample Selection 
+. * Drop those who are missing their cpsidp/cpsid and ditch those in the ASEC oversample (id == 0)
+. u ..\temp\pre_r2, clear 
+
+. 
+. drop if cpsidp == 0 | cpsidp ==.
+(116,789 observations deleted)
+
+. drop if cpsid == 0 | cpsid ==. 
+(0 observations deleted)
+
+. 
+. * drop if demographics aren't available 
+. drop if age ==. | sex ==. | race ==. 
+(0 observations deleted)
+
+. drop if asecflag == 0
+(0 observations deleted)
+
+. 
+. * clean income
+. local list ="hhincome inctot incwage"
+
+. foreach var in `list' {
+  2.         replace `var'=. if inlist(`var', 999999999,999999998,99999999,99999998,999999,999998,9999999,9999998,
+> 99999)
+  3. }
+(27 real changes made, 27 to missing)
+(84 real changes made, 84 to missing)
+(823 real changes made, 823 to missing)
+
+. 
+. * Generate duplicates to find out who appears twice 
+. sort cpsidp sex race year
+
+. by cpsidp sex race: gen dup = cond(_N==1,0,_n)
+
+. 
+. * Create Year 1 variables 
+. preserve
+
+. 
+. keep if dup == 1 
+(241,579 observations deleted)
+
+. 
+. rename year year1 
+
+. 
+. local list = "statefip county metfips metro hhincome pernum wtfinl cpsidv asecwt earnweek2 hourwage2 relate age 
+> race marst popstat nchild nchlt5 bpl citizen hispan empstat labforce occ occ2010 occ1990 ind1990 occ1950 ind ind
+> 1950 classwkr uhrswork1 uhrswork2 ahrsworkt ahrswork1 wkstat multjob numjob educ ftotval inctot incwage hourwage
+>  paidhour union earnweek uhrsworkorg wksworkorg eligorg educ_bin age_bin race_cat married nonlabor_quint"
+
+. 
+. foreach var in `list' {
+  2. rename `var' `var'_year1
+  3. }
+
+. 
+. bys cpsid cpsidp sex: gen dup2 = cond(_N==1,0,_n)
+
+. drop if dup2 > 1
+(0 observations deleted)
+
+. 
+. tempfile year1
+
+. save `year1'
+file C:\Users\misaa\AppData\Local\Temp\ST_5c30_000008.tmp saved
+
+. 
+. * Create Year 2 variables 
+. restore
+
+. keep if dup == 2
+(241,579 observations deleted)
+
+. 
+. rename year year2 
+
+. 
+. gen year1 = year2 - 1 
+
+. 
+. foreach var in `list' {
+  2. rename `var' `var'_year2
+  3. }
+
+. 
+. bys cpsid cpsidp sex: gen dup2 = cond(_N==1,0,_n)
+
+. drop if dup2 > 1
+(0 observations deleted)
+
+. 
+. * Merge Year 1 and Year 2 
+. merge 1:1 cpsid cpsidp sex using `year1'
+(label eligorg_lbl already defined)
+(label earnweek_lbl already defined)
+(label union_lbl already defined)
+(label paidhour_lbl already defined)
+(label hourwage_lbl already defined)
+(label educ_lbl already defined)
+(label numjob_lbl already defined)
+(label multjob_lbl already defined)
+(label wkstat_lbl already defined)
+(label ahrswork1_lbl already defined)
+(label uhrswork2_lbl already defined)
+(label uhrswork1_lbl already defined)
+(label classwkr_lbl already defined)
+(label ind1950_lbl already defined)
+(label occ1950_lbl already defined)
+(label ind1990_lbl already defined)
+(label occ1990_lbl already defined)
+(label occ2010_lbl already defined)
+(label labforce_lbl already defined)
+(label empstat_lbl already defined)
+(label hispan_lbl already defined)
+(label citizen_lbl already defined)
+(label bpl_lbl already defined)
+(label nchlt5_lbl already defined)
+(label nchild_lbl already defined)
+(label popstat_lbl already defined)
+(label marst_lbl already defined)
+(label race_lbl already defined)
+(label sex_lbl already defined)
+(label age_lbl already defined)
+(label relate_lbl already defined)
+(label hourwage2_lbl already defined)
+(label earnweek2_lbl already defined)
+(label metro_lbl already defined)
+(label statefip_lbl already defined)
+(label asecflag_lbl already defined)
+(label month_lbl already defined)
+(label age_bin_lbl already defined)
+(label educ_bin_lbl already defined)
+(label race_cat_lbl already defined)
+
+    Result                           # of obs.
+    -----------------------------------------
+    not matched                             0
+    matched                            97,681  (_merge==3)
+    -----------------------------------------
+
+. 
+. 
+. reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.married_year2 nchild_year2 nchlt5_year2 i
+> .nonlabor_quint_year2, robust
+
+Linear regression                               Number of obs     =     97,681
+                                                F(13, 97667)      =     886.38
+                                                Prob > F          =     0.0000
+                                                R-squared         =     0.3237
+                                                Root MSE          =     207.51
+
+-----------------------------------------------------------------------------------------
+                        |               Robust
+        uhrswork1_year2 |      Coef.   Std. Err.      t    P>|t|     [95% Conf. Interval]
+------------------------+----------------------------------------------------------------
+        uhrswork1_year1 |   .5495055   .0057241    96.00   0.000     .5382863    .5607247
+                        |
+          age_bin_year2 |
+                 35-44  |   6.541124   1.920988     3.41   0.001     2.776011    10.30624
+                 45-54  |   13.95263   2.031262     6.87   0.000     9.971384    17.93388
+                 55-64  |   55.78207   2.575372    21.66   0.000     50.73437    60.82977
+                        |
+         race_cat_year2 |
+              Hispanic  |  -22.25297   3.712281    -5.99   0.000      -29.529   -14.97695
+Non-Black Non-Hispanic  |   -22.1595   3.045751    -7.28   0.000    -28.12914   -16.18987
+                        |
+        1.married_year2 |  -21.14065   2.122215    -9.96   0.000    -25.30017   -16.98114
+           nchild_year2 |  -2.297267   .6590293    -3.49   0.000    -3.588957   -1.005578
+           nchlt5_year2 |   4.582286   1.417049     3.23   0.001     1.804887    7.359685
+                        |
+   nonlabor_quint_year2 |
+                     2  |   23.06514   2.281717    10.11   0.000       18.593    27.53728
+                     3  |   24.56337   2.379063    10.32   0.000     19.90043     29.2263
+                     4  |   19.57303   2.312537     8.46   0.000     15.04048    24.10557
+                     5  |   17.81959    2.30489     7.73   0.000     13.30203    22.33715
+                        |
+                  _cons |   56.13685   3.434224    16.35   0.000     49.40581    62.86789
+-----------------------------------------------------------------------------------------
+
+. 
+. save ..\temp\pre_r2_2, replace 
+file ..\temp\pre_r2_2.dta saved
+
+. 
+. * Row 1 (All regressors)
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.marrie
+> d_year2 nchild_year2 nchlt5_year2 i.nonlabor_quint_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.married_year2
+                    nchild_year2 nchlt5_year2 i.nonlabor_quint_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row1_panelb.dta, replace 
+file ..\output\table1_row1_panelb.dta saved
+
+. 
+. * Row 2 (no age)
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.race_cat_year2 i.married_year2 nchild_y
+> ear2 nchlt5_year2 i.nonlabor_quint_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.race_cat_year2 i.married_year2 nchild_year2
+                    nchlt5_year2 i.nonlabor_quint_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row2_panelb.dta, replace 
+file ..\output\table1_row2_panelb.dta saved
+
+. 
+. * Row 3 (no race)
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.married_year2 nchild_ye
+> ar2 nchlt5_year2 i.nonlabor_quint_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.married_year2 nchild_year2
+                    nchlt5_year2 i.nonlabor_quint_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row3_panelb.dta, replace 
+file ..\output\table1_row3_panelb.dta saved
+
+. 
+. * Row 4 (no marital status) 
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 nchild_y
+> ear2 nchlt5_year2 i.nonlabor_quint_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 nchild_year2
+                    nchlt5_year2 i.nonlabor_quint_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row4_panelb.dta, replace 
+file ..\output\table1_row4_panelb.dta saved
+
+. 
+. * Row 5 (no child variables)
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.marrie
+> d_year2 i.nonlabor_quint_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.married_year2
+                    i.nonlabor_quint_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row5_panelb.dta, replace 
+file ..\output\table1_row5_panelb.dta saved
+
+. 
+. * Row 6 (no income quintile)
+. u ..\temp\pre_r2_2, clear 
+
+. 
+. statsby e(r2), by(educ_bin_year2): reg uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.marrie
+> d_year2 nchild_year2 nchlt5_year2, robust
+(running regress on estimation sample)
+
+      command:  regress uhrswork1_year2 uhrswork1_year1 i.age_bin_year2 i.race_cat_year2 i.married_year2
+                    nchild_year2 nchlt5_year2, robust
+      _stat_1:  e(r2)
+           by:  educ_bin_year2
+
+Statsby groups
+----+--- 1 ---+--- 2 ---+--- 3 ---+--- 4 ---+--- 5 
+....
+
+. 
+. save ..\output\table1_row6_panelb.dta, replace 
+file ..\output\table1_row6_panelb.dta saved
+
+. 
+. cap log close 
