@@ -4,8 +4,8 @@
 % to zt using Tauchen s method. Use a Galerkin weighting scheme.
 % Maggie Isaacson 
 
-clear all 
-clc 
+%clear all 
+% clc 
 
 %% Parameters and Grids 
 % Parameters 
@@ -32,70 +32,74 @@ options= optimset('Display','Iter','TolFun',1e-15,'TolX',1e-15);
 % k_ss from problem 1 
 k_ss = 2.0514 ; 
 n= 9*0 + 71;
-grid_num = n ; 
+n_k = n ; 
 cover_grid = 0.25;
 k_min = k_ss*(1-cover_grid);
 k_max = k_ss*(1+cover_grid);
 interval = k_ss*2*cover_grid;
-k_grid = zeros(grid_num,1) ; 
+k_grid = zeros(n_k,1) ; 
 
-for i = 1:grid_num
-    k_grid(i) = k_min+(i-1)*interval/(grid_num-1);
+for i = 1:n_k
+    k_grid(i) = k_min+(i-1)*interval/(n_k-1);
 end
 
-dnk=    1001;
-dkg=    linspace(k_min,k_max,dnk)';
+dn_k =    1001;
+dk_grid =    linspace(k_min,k_max,dn_k)';
 
 %% Finite Elements with Galerkin Weighting 
 % Gauss-Legendre Quadrature 
 quad_num = 10 ; 
-x_grid = zeros(quad_num,grid_num-1) ; 
-w_grid = zeros(quad_num,grid_num-1) ; 
+x_grid = zeros(quad_num,n_k-1) ; 
+w_grid = zeros(quad_num,n_k-1) ; 
 
 for i = 1:(n-1)
    [x_grid(:,i), w_grid(:,i)] = gl_quad(k_grid(i), k_grid(i+1)) ;
 end
 
 % Initial Guess 
-ths = initial_guess(k_grid, grid_num,Z, n_z, Zprob, beta, eta, alpha,delta,0,options) ; 
+ths = initial_guess(k_grid, n_k,Z, n_z, Zprob, beta, eta, alpha,delta,0,options) ; 
 th0 = ths(:) ; % Vectorize 
 
-theta = th0 ; 
-    % Undo vectorizing of THS 
-    theta = reshape(theta,grid_num,n_z ) ; 
-    
-    % Vectorize 
-    x = x_grid(:) ; 
-    w = w_grid(:) ; 
-    nq = quad_num*(n-1) ; 
-
-    psi_q = tent_basis(x, nq, k_grid, n) ; 
-    c_hat = psi_q*theta ; 
-
-    L = ((1 - alpha)*x.^alpha * exp(Z)) ./c_hat ; 
-    L = L.^(1/(eta+alpha)) ; 
-
 % Finite Elements 
-% fsolve(@(theta) FE_residual(theta,n, x_grid, w_grid, quad_num, k_grid, n_k,Z, N, Zprob, beta, eta, alpha,delta), th0, options) ; 
+ths = fsolve(@(theta) FE_residual(theta,n, x_grid, w_grid, quad_num, k_grid, n_k,Z, n_z, Zprob, beta, eta, alpha,delta), th0, options) ; 
+
+theta = reshape(ths, n_k, n_z) ; 
+g_c = tent_basis(dk_grid, dn_k, k_grid, n)*theta ; 
+g_l = (((1 - alpha)*dk_grid.^alpha * exp(Z))./g_c ).^(1/(eta + alpha)) ; 
+g_kp = exp(Z).*(dk_grid.^alpha).*(g_l).^(1-alpha) + (1-delta)*(dk_grid) - g_c ;  
+value_function = log(g_c) - (g_l.^2)/2 ; 
 
 %% Euler Residuals 
 
 %% Plotting
-% Build a denser capital grid to plot with 
+figure(1)
+subplot(2,2,1)
+plot(dk_grid,value_function)
+title('Value Function')
+subplot(2,2,2)
+plot(dk_grid,g_c)
+title('Consumption Decision Rule')
+subplot(2,2,3)
+plot(dk_grid,g_l)
+title('Labor Decision Rule')
+subplot(2,2,4)
+plot(dk_grid,g_kp)
+title('Capital Decision Rule')
+
 
 
 %% Function Appendix
-function [psi_i] = tent_basis(x_grid, n_x, k_grid, grid_num) 
-    psi_i = zeros(n_x, grid_num) ; 
+function [psi_i] = tent_basis(x_grid, n_x, k_grid, n) 
+    psi_i = zeros(n_x, n) ; 
 
-    for i=1:grid_num 
+    for i=1:n 
         if (i==1) 
             k1 = k_grid(i) ; 
             k2 = k_grid(i+1) ; 
 
             log_grid = (x_grid <= k2) ; 
             psi_i(:,i) = (k2 - x_grid)/(k2 - k1).*log_grid ; 
-        elseif (i < grid_num) 
+        elseif (i < n) 
             k0 = k_grid(i-1) ; 
             k1 = k_grid(i) ; 
             k2 = k_grid(i+1) ;
@@ -148,9 +152,28 @@ function error = FE_residual(theta,n, x_grid, w_grid, quad_num, k_grid, grid_num
     psi_q = tent_basis(x, nq, k_grid, n) ; 
     c_hat = psi_q*theta ; 
 
-    L = ((1 - alpha)*k.^alpha * exp(Z)) ./c_hat ; 
+    L = ((1 - alpha)*x.^alpha * exp(Z)) ./c_hat ; 
     L = L.^(1/(eta+alpha)) ; 
 
-    kp = k.^alpha .*L ;
+    kp = x.^alpha .*L.^(1-alpha) .*exp(Z) + (1-delta)*x - c_hat ;
+
+    error = ones(n,n_z) ; 
+    % Loop over the values of productivity z 
+    for prod_num = 1:n_z
+        cons = c_hat(:, prod_num) ;
+        kprime = kp(:, prod_num) ;
+
+        consprime = tent_basis(kprime, nq, k_grid, n)* theta ; 
+        labprime = (((1-alpha)*kprime.^alpha*exp(Z))./consprime).^(1/(eta+alpha)) ; 
+        rprime = 1 + (alpha*(kprime./labprime).^(alpha-1)) .* exp(Z) - delta ;
+
+        % Euler Equation Residuals 
+        residual = 1 - beta*cons.*(rprime./consprime)*transpose(Zprob(prod_num,:)) ;
+        residual = psi_q.*residual ; 
+
+        error(:,prod_num) = transpose(sum(residual .* w)) ;
+
+    end 
+    error = error(:) ; 
 
 end 
