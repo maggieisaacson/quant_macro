@@ -21,25 +21,28 @@ grid_num  = 100 ;                  % Capital Grid Size (increase later)
 mu_z = 0 ;
 N = 3 ; 
 m = 1 ; 
-rho = 0.95 ; 
+rho_z = 0.95 ; 
 sigma_e = 0.007 ; 
 z = 0 ; 
+sigma=  1;
+psi=    1;
 
 % Steady State 
-psi = ((1/beta - 0.9)*(exp(-z)/alpha)).^(1/(alpha-1)) ; 
-w_ss = (psi.^alpha).*exp(z)*(1-alpha) ; 
-r_ss = (psi.^(1-alpha).*exp(z))*alpha ;
+% useful constants
+rho=    1/beta-1;
+y_k=    (rho+delta)/alpha;
+k_l=    y_k^( 1/(alpha-1) );
 
-guess = 1 ; 
-l_ss = fsolve(@(l) steady_state(l, w_ss, r_ss, psi,z,alpha),guess) ; 
-
-k_ss = l_ss.*psi ; 
-i_ss = 0.1*k_ss ; 
-c_ss = w_ss./l_ss ; 
+% steady-states
+c_ss=    (( k_l^alpha - delta*k_l ) *( (1-alpha)*(k_l)^alpha )^(1/psi))^( 1/( 1 + sigma/psi )) ;
+l_ss=    ( (1-alpha)* k_l^alpha * c_ss^(-sigma) )^(1/psi);
+k_ss=    k_l*l_ss;
+y_ss=    y_k*k_ss;
+x_ss=    [c_ss l_ss k_ss y_ss ]'; 
 
 v_ss = log(c_ss) - (l_ss.^2/2) ; 
 
-[Z,Zprob] = tauchen(N,mu_z,rho,sigma_e,m) ; 
+[Z,Zprob] = tauchen(N,mu_z,rho_z,sigma_e,m) ; 
 
 %% 
 % Algorithm for Projection using Chebyshev polynomials 
@@ -142,14 +145,6 @@ function [Z,Zprob] = tauchen(N,mu,rho,sigma,m)
     end
 
     Z=Z';
-end 
-
-function [output] = steady_state(l_ss, w_ss, r_ss, psi,Z,alpha)
-    k_ss = psi.*l_ss ; 
-    i_ss = 0.1.*k_ss ; 
-    c_ss = w_ss/l_ss ; 
-
-   output = w_ss.*l_ss + r_ss.*k_ss - c_ss - i_ss  ; 
 end 
 
 function res = residual_fcn(alpha,beta,delta,k_min,k_max,rho_guess,grid_k,T_k,Z,Zprob,node_num,N,M);
