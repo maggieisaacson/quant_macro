@@ -1,4 +1,4 @@
-% Hw 2 Problem 1 
+% HW 2 Problem 1 
 % Compute the solution to the model when you use six
 % Chebyshev polynomials on capital and a three-point finite approximation
 % to zt using Tauchen s method.
@@ -14,11 +14,7 @@ alpha = 0.33 ; % Capital Share
 delta = 0.1 ; % Depreciation 
 
 % Euler errors
-grid_num  = 10 ;                  % Capital Grid Size (increase later) 
-
-% Simulation
-T         = 100;                 % simulation number
-dropT     = 10;                  % drop beginning periods (so the opening doesn't matter) 
+grid_num  = 100 ;                  % Capital Grid Size (increase later) 
 
 % Discretize the AR(1) process into 3 points using Tauchen 
 % From notes, K = 1, N = 3
